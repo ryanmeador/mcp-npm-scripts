@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "mcp-npm-scripts": {
+      "command": "node",
+      "args": ["dist/cli.js"],
+      "cwd": "${workspaceFolder}",
+      "env": {}
+    },
+    "mcp-npm-scripts:dev": {
+      "command": "npm",
+      "args": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_LOG_LEVEL": "debug"
+      }
+    }
+  }
+}

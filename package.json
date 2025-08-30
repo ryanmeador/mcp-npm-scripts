@@ -28,7 +28,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "dev": "tsx watch src/cli.ts",
+    "dev": "npm run build && node dist/cli.js",
+    "watch": "tsc -w",
     "typecheck": "tsc --noEmit",
     "prepare": "npm run build",
     "start": "node dist/cli.js",
@@ -41,6 +42,10 @@
   },
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "zod": "^3.23.8"
+  },
   "devDependencies": {
     "@types/node": "^20.12.7",
     "husky": "^9.1.4",
