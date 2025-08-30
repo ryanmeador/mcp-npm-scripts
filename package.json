@@ -1,0 +1,55 @@
+{
+  "name": "mcp-npm-scripts",
+  "version": "0.0.0",
+  "description": "Model Context Protocol (MCP) server exposing package.json scripts as tools (skeleton).",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "npm",
+    "scripts",
+    "tools"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "import": "./dist/cli.js"
+    }
+  },
+  "bin": {
+    "mcp-npm-scripts": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "tsx watch src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
+    "start": "node dist/cli.js",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "husky:install": "husky install"
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.6",
+    "prettier": "^3.3.3",
+    "tsx": "^4.16.2",
+    "typescript": "^5.4.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,cts,mts,json,md,yml,yaml}": "prettier --write"
+  }
+}
