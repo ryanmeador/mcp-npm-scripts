@@ -14,23 +14,7 @@ export function createServer() {
     name: 'mcp-npm-scripts',
     version: '0.0.0',
   });
-
-  // Built‑in PoC hello tool (mirrors original behavior)
-  server.registerTool(
-    'hello',
-    {
-      description: 'Return a friendly greeting',
-      inputSchema: { name: z.string().describe('Name to greet').optional() },
-    },
-    async ({ name }) => ({
-      content: [
-        {
-          type: 'text',
-          text: `Hello, ${(name ?? 'world').trim()}!`,
-        },
-      ],
-    }),
-  );
+  // No built-in tools; all tools are derived from discovered npm scripts.
 
   return server;
 }

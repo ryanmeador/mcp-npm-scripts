@@ -2,7 +2,7 @@
 
 Model Context Protocol (MCP) server that exposes your project's `package.json` scripts as MCP tools.
 
-> Status: WIP skeleton. Currently just a hello-world placeholder.
+> Status: Early WIP. API subject to change; feedback welcome.
 
 ## Goals
 
@@ -26,9 +26,9 @@ npx mcp-npm-scripts ./path/to/project
 npx mcp-npm-scripts ./path/to/project/package.json
 ```
 
-Every npm script inside that `package.json` becomes an MCP tool whose name matches the script key. Invoking a tool runs `npm run <script> --silent` in the package directory and returns combined stdout/stderr as a text response.
+Every npm script inside that `package.json` becomes an MCP tool whose name matches the script key. Invoking a tool runs `npm run <script>` in the package directory and returns combined stdout/stderr as a text response.
 
-If no path is provided, the server starts with only the built-in `hello` tool.
+If no path is provided, the server currently starts with zero tools (you must point it at a project to register scripts).
 
 ## Development
 
