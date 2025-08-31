@@ -26,7 +26,7 @@ npx mcp-npm-scripts ./path/to/project
 npx mcp-npm-scripts ./path/to/project/package.json
 ```
 
-Every npm script inside that `package.json` becomes an MCP tool whose name matches the script key. Invoking a tool runs `npm run <script>` in the package directory and returns combined stdout/stderr as a text response.
+Every npm script inside that `package.json` becomes an MCP tool. Script names are sanitized to valid tool ids: lowercase, any run of disallowed characters replaced with a single underscore, trimmed, with numeric suffixes added on collision. Invoking a tool runs `npm run <original-script-name>` in the package directory and returns combined stdout/stderr as a text response.
 
 If no path is provided, the server currently starts with zero tools (you must point it at a project to register scripts).
 

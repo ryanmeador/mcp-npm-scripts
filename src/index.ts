@@ -1,6 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
 import fs from 'fs/promises';
 import { spawn } from 'child_process';
 import path from 'path';
@@ -25,7 +24,7 @@ export function createServer() {
 export async function startServer(packageJsonPath?: string) {
   const server = createServer();
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // Important: register tools BEFORE connecting; current SDK disallows capability registration after connect.
   if (packageJsonPath) {
     try {
       await registerScriptsFromPackageJson(server, packageJsonPath);
@@ -33,6 +32,7 @@ export async function startServer(packageJsonPath?: string) {
       console.error('Failed to register npm script tools:', err);
     }
   }
+  await server.connect(transport);
   return server;
 }
 
@@ -72,20 +72,61 @@ export async function registerScriptsFromPackageJson(
     return; // nothing to add
   }
 
+  const usedToolNames = new Set<string>();
+
   for (const [scriptName, scriptCmd] of Object.entries(scripts)) {
-    // Avoid accidentally overriding existing tools; skip if already present
-    if ((server as any).tools?.has(scriptName)) continue;
+    const toolName = generateUniqueToolName(scriptName, usedToolNames, (server as any).tools);
+    usedToolNames.add(toolName);
+
+    // Avoid overriding existing tools that may have same sanitized name from earlier dynamic additions.
+    if ((server as any).tools?.has(toolName)) continue;
+
+    const description =
+      scriptName === toolName
+        ? `npm script: ${scriptCmd}`
+        : `npm script (${scriptName}): ${scriptCmd}`;
+
     server.registerTool(
-      scriptName,
+      toolName,
       {
-        description: `npm script: ${scriptCmd}`,
-        inputSchema: {}, // no inputs for now
+        description,
+        inputSchema: {}, // no inputs yet; future: allow args/env selection
       },
-      async () => {
-        return runNpmScript(pkgDir, scriptName);
-      },
+      async () => runNpmScript(pkgDir, scriptName), // always execute original name
     );
   }
+}
+
+/**
+ * Sanitize an npm script name into a valid MCP tool id (allowed: [a-z0-9_-]).
+ * Strategy:
+ *  - lowercase
+ *  - replace any run of disallowed chars with a single underscore
+ *  - trim leading/trailing underscores
+ *  - fallback to 'script' if empty after sanitation
+ */
+function sanitizeScriptName(name: string): string {
+  const lowered = name.toLowerCase();
+  const replaced = lowered.replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+  return replaced.length === 0 ? 'script' : replaced;
+}
+
+/**
+ * Generate a unique tool name derived from the script name, avoiding collisions both within
+ * this registration batch and any pre-existing server tools. Collisions append _2, _3, ...
+ */
+function generateUniqueToolName(
+  original: string,
+  used: Set<string>,
+  existingTools: Map<string, any> | undefined,
+) {
+  const base = sanitizeScriptName(original);
+  let candidate = base;
+  let counter = 2;
+  while (used.has(candidate) || existingTools?.has(candidate)) {
+    candidate = `${base}_${counter++}`;
+  }
+  return candidate;
 }
 
 async function runNpmScript(cwd: string, script: string) {
