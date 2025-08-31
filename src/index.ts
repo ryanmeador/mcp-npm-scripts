@@ -3,6 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import fs from 'fs/promises';
 import { spawn } from 'child_process';
 import path from 'path';
+import { z } from 'zod';
 
 /**
  * Create and configure the MCP server. Tools/resources can be added *after* connect
@@ -90,9 +91,16 @@ export async function registerScriptsFromPackageJson(
       toolName,
       {
         description,
-        inputSchema: {}, // no inputs yet; future: allow args/env selection
+        inputSchema: {
+          args: z
+            .array(z.string())
+            .describe('Array of arguments to pass after "--" to the npm script')
+            .optional(),
+        },
       },
-      async () => runNpmScript(pkgDir, scriptName), // always execute original name
+      async ({ args }) => {
+        return runNpmScript(pkgDir, scriptName, args ?? []); // always execute original name
+      },
     );
   }
 }
@@ -129,11 +137,13 @@ function generateUniqueToolName(
   return candidate;
 }
 
-async function runNpmScript(cwd: string, script: string) {
+async function runNpmScript(cwd: string, script: string, args: string[] = []) {
   return new Promise<{ content: { type: 'text'; text: string }[] }>((resolve) => {
     // Deliberately omit --silent so that npm emits the usual two header lines (" > pkg@ver script" and the command),
     // giving users feedback for scripts whose underlying command (e.g. tsc) produces no stdout on success.
-    const proc = spawn('npm', ['run', script], { cwd, env: process.env });
+    const fullArgs = ['run', script];
+    if (args.length > 0) fullArgs.push('--', ...args);
+    const proc = spawn('npm', fullArgs, { cwd, env: process.env });
     let output = '';
     proc.stdout.on('data', (d) => (output += d.toString()));
     proc.stderr.on('data', (d) => (output += d.toString()));
