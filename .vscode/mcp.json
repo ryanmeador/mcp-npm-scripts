@@ -2,7 +2,7 @@
   "servers": {
     "mcp-npm-scripts": {
       "command": "node",
-      "args": ["dist/cli.js"],
+      "args": ["dist/cli.js", "${workspaceFolder}"],
       "cwd": "${workspaceFolder}",
       "env": {}
     },

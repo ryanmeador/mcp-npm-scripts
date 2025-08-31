@@ -10,7 +10,7 @@ Model Context Protocol (MCP) server that exposes your project's `package.json` s
 - Lightweight runtime: published bundle is plain JS (ESM) with type declarations.
 - Zero TypeScript requirement for consumers.
 
-## Usage (skeleton)
+## Usage
 
 Install (once published):
 
@@ -18,19 +18,17 @@ Install (once published):
 npm install --save-dev mcp-npm-scripts
 ```
 
-Run the (placeholder) CLI:
+Start the MCP server pointing at your project (directory or explicit package.json):
 
 ```bash
-npx mcp-npm-scripts
-# → Hello, world!
+npx mcp-npm-scripts ./path/to/project
+# or
+npx mcp-npm-scripts ./path/to/project/package.json
 ```
 
-Pass a name:
+Every npm script inside that `package.json` becomes an MCP tool whose name matches the script key. Invoking a tool runs `npm run <script> --silent` in the package directory and returns combined stdout/stderr as a text response.
 
-```bash
-npx mcp-npm-scripts Alice
-# → Hello, Alice!
-```
+If no path is provided, the server starts with only the built-in `hello` tool.
 
 ## Development
 
