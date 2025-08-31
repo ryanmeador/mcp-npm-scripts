@@ -31,7 +31,7 @@ Every npm script inside that `package.json` becomes an MCP tool. Script names ar
 Arguments:
 Provide arguments via the `args` array (strings). They are appended after `--` so they appear to the script as positional parameters.
 
-If no path is provided, the server currently starts with zero tools (you must point it at a project to register scripts).
+If no path is provided, the CLI searches upward from the current working directory for the nearest package.json (skipping its own) and uses that. If none is found, the server starts with zero tools.
 
 ## Development
 
