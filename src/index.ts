@@ -6,6 +6,15 @@ import path from 'path';
 import { z } from 'zod';
 
 /**
+ * Standard text content result returned by tool handlers.
+ * Future enhancement: include exit code & timing metadata.
+ */
+export interface ToolRunResult {
+  content: { type: 'text'; text: string }[];
+  [key: string]: unknown; // index signature required for SDK structural typing
+}
+
+/**
  * Create and configure the MCP server. Tools/resources can be added *after* connect
  * for dynamic behavior (the SDK automatically emits listChanged notifications).
  */
@@ -73,14 +82,20 @@ export async function registerScriptsFromPackageJson(
     return; // nothing to add
   }
 
+  // Pre-compute existing tool names once for uniqueness checks.
+  const existingToolsMap: Map<string, any> | undefined = (server as any).tools;
+  const existingNames = new Set<string>(
+    existingToolsMap ? Array.from(existingToolsMap.keys()) : [],
+  );
   const usedToolNames = new Set<string>();
 
   for (const [scriptName, scriptCmd] of Object.entries(scripts)) {
-    const toolName = generateUniqueToolName(scriptName, usedToolNames, (server as any).tools);
+    const toolName = generateUniqueToolName(scriptName, usedToolNames, existingNames);
     usedToolNames.add(toolName);
+    existingNames.add(toolName);
 
     // Avoid overriding existing tools that may have same sanitized name from earlier dynamic additions.
-    if ((server as any).tools?.has(toolName)) continue;
+    if (existingToolsMap?.has(toolName)) continue;
 
     const description =
       scriptName === toolName
@@ -98,9 +113,7 @@ export async function registerScriptsFromPackageJson(
             .optional(),
         },
       },
-      async ({ args }) => {
-        return runNpmScript(pkgDir, scriptName, args ?? []); // always execute original name
-      },
+      async ({ args }) => runNpmScript(pkgDir, scriptName, args ?? []),
     );
   }
 }
@@ -113,9 +126,11 @@ export async function registerScriptsFromPackageJson(
  *  - trim leading/trailing underscores
  *  - fallback to 'script' if empty after sanitation
  */
+const INVALID_CHARS_RE = /[^a-z0-9_-]+/g;
+const TRIM_UNDERSCORES_RE = /^_+|_+$/g;
 function sanitizeScriptName(name: string): string {
   const lowered = name.toLowerCase();
-  const replaced = lowered.replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+  const replaced = lowered.replace(INVALID_CHARS_RE, '_').replace(TRIM_UNDERSCORES_RE, '');
   return replaced.length === 0 ? 'script' : replaced;
 }
 
@@ -123,31 +138,33 @@ function sanitizeScriptName(name: string): string {
  * Generate a unique tool name derived from the script name, avoiding collisions both within
  * this registration batch and any pre-existing server tools. Collisions append _2, _3, ...
  */
-function generateUniqueToolName(
-  original: string,
-  used: Set<string>,
-  existingTools: Map<string, any> | undefined,
-) {
+function generateUniqueToolName(original: string, used: Set<string>, existingNames: Set<string>) {
   const base = sanitizeScriptName(original);
   let candidate = base;
   let counter = 2;
-  while (used.has(candidate) || existingTools?.has(candidate)) {
+  while (used.has(candidate) || existingNames.has(candidate)) {
     candidate = `${base}_${counter++}`;
   }
   return candidate;
 }
 
-async function runNpmScript(cwd: string, script: string, args: string[] = []) {
-  return new Promise<{ content: { type: 'text'; text: string }[] }>((resolve) => {
-    // Deliberately omit --silent so that npm emits the usual two header lines (" > pkg@ver script" and the command),
-    // giving users feedback for scripts whose underlying command (e.g. tsc) produces no stdout on success.
+async function runNpmScript(
+  cwd: string,
+  script: string,
+  args: string[] = [],
+): Promise<ToolRunResult> {
+  return new Promise<ToolRunResult>((resolve) => {
     const fullArgs = ['run', script];
     if (args.length > 0) fullArgs.push('--', ...args);
     const proc = spawn('npm', fullArgs, { cwd, env: process.env });
     let output = '';
     proc.stdout.on('data', (d) => (output += d.toString()));
     proc.stderr.on('data', (d) => (output += d.toString()));
+    proc.on('error', (err) => {
+      output += `\n[spawn error] ${(err as Error).message}`;
+    });
     proc.on('close', (code) => {
+      // TODO: surface exit code & timing as structured metadata in future version.
       resolve({
         content: [
           {
