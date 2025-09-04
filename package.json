@@ -1,11 +1,12 @@
 {
   "name": "mcp-npm-scripts",
-  "version": "0.0.0",
-  "description": "Model Context Protocol (MCP) server exposing package.json scripts as tools (skeleton).",
+  "version": "0.1.0",
+  "description": "Model Context Protocol (MCP) server exposing package.json scripts as tools.",
   "keywords": [
     "mcp",
     "model-context-protocol",
     "npm",
+    "package.json",
     "scripts",
     "tools"
   ],
@@ -40,7 +41,7 @@
   "engines": {
     "node": ">=18.18"
   },
-  "author": "",
+  "author": "Ryan Meador",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",
