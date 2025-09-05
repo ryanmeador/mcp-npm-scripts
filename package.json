@@ -21,7 +21,7 @@
     }
   },
   "bin": {
-    "mcp-npm-scripts": "./dist/cli.js"
+    "mcp-npm-scripts": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -43,6 +43,14 @@
   },
   "author": "Ryan Meador",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanmeador/mcp-npm-scripts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryanmeador/mcp-npm-scripts/issues"
+  },
+  "homepage": "https://github.com/ryanmeador/mcp-npm-scripts#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",
     "zod": "^3.23.8"
